@@ -1,31 +1,70 @@
-name: GCP Auth Test
+name: Build & Push to GCP
 
 on:
   push:
     branches:
       - main
 
+env:
+  PROJECT_ID: hcl-devops-hackathon
+  REGION: asia-south1
+  REPO: devops-repo
+
 jobs:
-  auth-test:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    # 1️⃣ Checkout code
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      # Step 2: Authenticate to GCP using JSON key
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+    # 2️⃣ Authenticate to GCP
+    - name: Authenticate to GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-      # Step 3: Setup gcloud CLI
-      - name: Setup gcloud
-        uses: google-github-actions/setup-gcloud@v2
+    # 3️⃣ Setup gcloud
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@v2
 
-      # Step 4: Verify authentication
-      - name: Verify GCP Auth
-        run: |
-          gcloud auth list
-          gcloud config list
+    # 4️⃣ Configure Docker for Artifact Registry
+    - name: Configure Docker
+      run: |
+        gcloud auth configure-docker $REGION-docker.pkg.dev
+
+    # =========================
+    # 🐳 BUILD IMAGES
+    # =========================
+
+    # 5️⃣ Build application-service (Node)
+    - name: Build application-service image
+      run: |
+        docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/application-service:latest ./application-service
+
+    # 6️⃣ Build patient-service (Node)
+    - name: Build patient-service image
+      run: |
+        docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/patient-service:latest ./patient-service
+
+    # 7️⃣ Build order-service (Java)
+    - name: Build order-service image
+      run: |
+        docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/order-service:latest ./order-service
+
+    # =========================
+    # 🚀 PUSH IMAGES
+    # =========================
+
+    - name: Push application-service
+      run: |
+        docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/application-service:latest
+
+    - name: Push patient-service
+      run: |
+        docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/patient-service:latest
+
+    - name: Push order-service
+      run: |
+        docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/order-service:latest
