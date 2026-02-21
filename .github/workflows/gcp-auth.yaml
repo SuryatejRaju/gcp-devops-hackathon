@@ -68,3 +68,4 @@ jobs:
     - name: Push order-service
       run: |
         docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/order-service:latest
+
