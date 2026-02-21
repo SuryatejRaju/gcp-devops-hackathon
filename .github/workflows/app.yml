@@ -52,3 +52,4 @@ jobs:
           docker push ${REGION}-docker.pkg.dev/$PROJECT_ID/$REPO/application-service:latest
           docker push ${REGION}-docker.pkg.dev/$PROJECT_ID/$REPO/patient-service:latest
           docker push ${REGION}-docker.pkg.dev/$PROJECT_ID/$REPO/order-service:latest
+          
