@@ -1,11 +1,18 @@
 variable "project_id" {
-  default = "hcl-devops-hackathon"
+  description = "GCP Project ID"
 }
 
 variable "region" {
-  default = "us-central1"
+  description = "GCP Region"
+  default     = "us-central1"
+}
+
+variable "zone" {
+  description = "GCP Zone"
+  default     = "us-central1-a"
 }
 
 variable "cluster_name" {
-  default = "hackathon-cluster"
+  description = "GKE Cluster Name"
+  default     = "hackathon-gke-cluster"
 }
