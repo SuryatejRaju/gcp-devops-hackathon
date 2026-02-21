@@ -1,0 +1,30 @@
+name: Terraform Infra
+
+on:
+  push:
+    paths:
+      - 'terraform/**'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: terraform
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: terraform
