@@ -1,1 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: application-service
+  template:
+    metadata:
+      labels:
+        app: application-service
+    spec:
+      containers:
+      - name: application-service
+        image: asia-south1-docker.pkg.dev/hcl-devops-hackathon/devops-repo/application-service:latest
+        ports:
+        - containerPort: 3000
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: application-service
+  ports:
+    - port: 80
+      targetPort: 3000
