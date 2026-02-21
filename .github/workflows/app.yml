@@ -41,3 +41,4 @@ jobs:
         run: |
           docker push us-central1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/hackathon-repo/app-service:latest
           docker push us-central1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/hackathon-repo/order-service:latest
+          
