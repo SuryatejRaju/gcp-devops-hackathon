@@ -1,44 +1,74 @@
-name: Build & Push
+name: Build & Push to GCP
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+
+env:
+  PROJECT_ID: hcl-devops-hackathon
+  REGION: asia-south1
+  REPO: my-repo   # artifact registry repo name
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2️⃣ Authenticate to GCP (JSON KEY)
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
+      # 3️⃣ Setup gcloud
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 4️⃣ Configure Docker for Artifact Registry
       - name: Configure Docker
-        run: gcloud auth configure-docker us-central1-docker.pkg.dev
-
-      # Build Java JAR
-      - name: Build Java App
         run: |
-          cd application-service
-          mvn clean package
+          gcloud auth configure-docker ${REGION}-docker.pkg.dev
 
-      # Build Docker image (Java)
-      - name: Build Java Image
-        run: |
-          docker build -t us-central1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/hackathon-repo/app-service:latest ./application-service
+      # ================================
+      # 🟢 BUILD NODE SERVICES
+      # ================================
 
-      # Build Docker image (Node)
-      - name: Build Node Image
+      - name: Build application-service image
         run: |
-          docker build -t us-central1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/hackathon-repo/order-service:latest ./order-service
+          docker build -t ${REGION}-docker.pkg.dev/$PROJECT_ID/$REPO/application-service:latest ./application-service
 
-      # Push Images
-      - name: Push Images
+      - name: Build patient-service image
         run: |
-          docker push us-central1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/hackathon-repo/app-service:latest
-          docker push us-central1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/hackathon-repo/order-service:latest
-          
+          docker build -t ${REGION}-docker.pkg.dev/$PROJECT_ID/$REPO/patient-service:latest ./patient-service
+
+      # ================================
+      # 🔵 BUILD JAVA SERVICE
+      # ================================
+
+      - name: Build order-service (Java)
+        run: |
+          cd order-service
+          mvn clean package -DskipTests
+          cd ..
+          docker build -t ${REGION}-docker.pkg.dev/$PROJECT_ID/$REPO/order-service:latest ./order-service
+
+      # ================================
+      # 🚀 PUSH IMAGES
+      # ================================
+
+      - name: Push application-service
+        run: |
+          docker push ${REGION}-docker.pkg.dev/$PROJECT_ID/$REPO/application-service:latest
+
+      - name: Push patient-service
+        run: |
+          docker push ${REGION}-docker.pkg.dev/$PROJECT_ID/$REPO/patient-service:latest
+
+      - name: Push order-service
+        run: |
+          docker push ${REGION}-docker.pkg.dev/$PROJECT_ID/$REPO/order-service:latest
